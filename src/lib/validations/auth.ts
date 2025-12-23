@@ -4,7 +4,7 @@ export const registerSchema = z
   .object({
     firstName: z.string().min(2, "First name must be at least 2 characters"),
     lastName: z.string().min(2, "Last name must be at least 2 characters"),
-    email: z.string().email("Invalid email address"),
+    email: z.email("Invalid email address"),
     phone: z
       .string()
       .min(10, "Phone number must be at least 10 characters")
@@ -27,8 +27,16 @@ export const registerSchema = z
       .min(1, "Select at least one contact method"),
     wantsBible: z.boolean(),
 
+    // Privacy & Terms
+    acceptSmsPolicy: z
+      .boolean()
+      .default(false)
+      .refine((val) => val === true, {
+        message: "You must accept the SMS Messaging Policy to continue.",
+      }),
+
     // Mentorship
-    mentorEmail: z.string().email().optional().or(z.literal("")),
+    mentorEmail: z.email().optional().or(z.literal("")),
   })
   .refine((data) => data.password === data.confirmPassword, {
     message: "Passwords do not match",
@@ -38,7 +46,7 @@ export const registerSchema = z
 export type RegisterInput = z.infer<typeof registerSchema>;
 
 export const loginSchema = z.object({
-  email: z.string().email("Invalid email address"),
+  email: z.email("Invalid email address"),
   password: z.string().min(1, "Password is required"),
 });
 

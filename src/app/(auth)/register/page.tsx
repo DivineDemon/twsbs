@@ -12,8 +12,6 @@ export default function RegisterPage() {
     <AuthLayout
       title="Create an account"
       description="Join the movement to save the world"
-      backButtonHref="/"
-      backButtonLabel="Back to Home"
     >
       <RegisterForm />
     </AuthLayout>

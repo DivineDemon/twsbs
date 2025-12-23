@@ -18,7 +18,9 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
+import { privacyPolicyContent, smsPolicyContent } from "@/lib/policies";
 import { type LoginInput, loginSchema } from "@/lib/validations/auth";
+import { PolicyModal } from "./policy-modal";
 
 export function LoginForm() {
   const router = useRouter();
@@ -104,16 +106,6 @@ export function LoginForm() {
           </Button>
         </form>
       </Form>
-      <div className="relative">
-        <div className="absolute inset-0 flex items-center">
-          <span className="w-full border-t" />
-        </div>
-        <div className="relative flex justify-center text-xs uppercase">
-          <span className="bg-background px-2 text-muted-foreground">
-            Or continue with
-          </span>
-        </div>
-      </div>
       <div className="text-center text-sm">
         Don&apos;t have an account?{" "}
         <Link
@@ -122,6 +114,18 @@ export function LoginForm() {
         >
           Create an account
         </Link>
+      </div>
+      <div className="flex justify-center gap-4 text-xs text-muted-foreground">
+        <PolicyModal
+          title="Privacy Policy"
+          content={privacyPolicyContent}
+          triggerText="Privacy Policy"
+        />
+        <PolicyModal
+          title="SMS Policy"
+          content={smsPolicyContent}
+          triggerText="SMS Policy"
+        />
       </div>
     </div>
   );

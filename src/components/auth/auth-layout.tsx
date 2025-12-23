@@ -1,4 +1,3 @@
-import Link from "next/link";
 import {
   Card,
   CardContent,
@@ -11,19 +10,11 @@ interface AuthLayoutProps {
   children: React.ReactNode;
   title: string;
   description: string;
-  backButtonHref?: string;
-  backButtonLabel?: string;
 }
 
-export function AuthLayout({
-  children,
-  title,
-  description,
-  backButtonHref,
-  backButtonLabel,
-}: AuthLayoutProps) {
+export function AuthLayout({ children, title, description }: AuthLayoutProps) {
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gray-50 px-4 py-12 dark:bg-gray-900 sm:px-6 lg:px-8">
+    <div className="flex min-h-screen items-center justify-center bg-background px-4 py-12 sm:px-6 lg:px-8">
       <Card className="w-full max-w-[500px]">
         <CardHeader className="space-y-1 text-center">
           <CardTitle className="text-2xl font-bold tracking-tight">
@@ -31,22 +22,8 @@ export function AuthLayout({
           </CardTitle>
           <CardDescription>{description}</CardDescription>
         </CardHeader>
-        <CardContent>
-          {children}
-          {backButtonHref && backButtonLabel && (
-            <div className="mt-4 text-center text-sm">
-              <Link
-                href={backButtonHref}
-                className="text-primary hover:underline"
-              >
-                {backButtonLabel}
-              </Link>
-            </div>
-          )}
-        </CardContent>
+        <CardContent>{children}</CardContent>
       </Card>
-
-      {/* Footer / Copyright could go here */}
     </div>
   );
 }
