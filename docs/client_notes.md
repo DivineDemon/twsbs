@@ -1,0 +1,28 @@
+- [ ] Super Admin must be able to change the Upline and Downline Links for the User.
+- [ ] User must be able to use Guest Mode.
+- [ ] Journey Progress must be ROYGIBW, all Progress meters must follow this.
+- [ ] Show Journey Progress on the Dashboard as well.
+- [ ] User is able to unmark objectives in the Journey Mode.
+- [ ] Show Primary objective (next step) of journey on the Dashboard.
+- [ ] User is able to request to join another user's network - Remove this
+- [ ] Network Graph visible for each user upto the 4th gen., but with a numeric indicator of the size of the entire network of that user.
+- [ ] Evangelism tools need to be orientable, i.e., Portrait, Landscape or Full screen.
+- [ ] User is able to share evangelism tools via link or image - remove this
+- [ ] User is able to record prayer requests - remove this
+- [ ] System is able to automatically calculate decisions as 10% of gospel shares - this needs to change as follows:
+    - [ ] 1000 shares
+    - [ ] 10% of 1000 means 100 decisions
+    - [ ] If anyone os done, an outline appears
+    - [ ] If both then colored
+    - [ ] Progression Requires anyone, not both
+- [ ] If the register invite comes in from the network, then the user comes in as a sharer or if the invite is from a movement mode user, else he comes in as a new believer.
+- [ ] QR code for invitation in profile:
+    - [ ] Goal: Get QR Scanned and add new user in our network.
+    - [ ] Dynamic: Based on user role, the role for the new user changes:
+        - [ ] Movement mode invitation: Sharer
+        - [ ] Gospel: New Believer
+        - [ ] Crusade: Crusade for the user to choose himself
+- [ ] Organizer is able to CRUD only their own events, but view all events.
+- [ ] Messaging System, Basic Message App Stuff. Attachments, Camera, Photos.
+- [ ] Soft Reminders to Progress with Courses or Sign back in.
+- [ ] All Users must be assigned an Invite QR code to share and invite people to the network.
