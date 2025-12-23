@@ -1,0 +1,763 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ============================================
+// ENUMS
+// ============================================
+
+enum UserRole {
+  User
+  Admin
+  SuperAdmin
+}
+
+enum UserLevel {
+  NewBeliever
+  Sharer
+  Trainer
+  Ambassador
+  Overseer
+  Shepherd
+}
+
+enum UserMode {
+  movement
+  new_believer
+  evangelist
+  neighborhoods
+  crusade
+}
+
+enum CrusadeSubMode {
+  organizer
+  volunteer
+  church
+  new_believer_event
+}
+
+enum EventStatus {
+  upcoming
+  ongoing
+  completed
+  cancelled
+}
+
+enum ConnectionStatus {
+  Connected
+  Pending
+  FailedToConnect
+}
+
+enum NetworkRequestStatus {
+  pending
+  approved
+  denied
+}
+
+enum Decision {
+  ReceivedJesus
+  AlreadyChristian
+  NotReady
+}
+
+enum ActivityType {
+  gospel_share
+  decision
+  disciple_added
+}
+
+enum LessonType {
+  video
+  document
+  html
+}
+
+enum CourseType {
+  normal
+  html
+}
+
+enum YesNo {
+  Yes
+  No
+}
+
+// ============================================
+// CORE USER ENTITIES
+// ============================================
+
+model User {
+  id             String    @id @default(uuid())
+  email          String    @unique
+  name           String
+  phone          String?
+  profilePicture String?
+  dateOfBirth    DateTime?
+  level          UserLevel @default(Sharer)
+  role           UserRole  @default(User)
+
+  // Location
+  locationCountry       String?
+  locationState         String?
+  locationTownSuburb    String?
+  locationMetro         String?
+  locationStreetAddress String?
+  locationLatitude      Decimal? @db.Decimal(10, 8)
+  locationLongitude     Decimal? @db.Decimal(11, 8)
+
+  joinDate DateTime @default(now()) @db.Date
+
+  // Network
+  uplineId String?
+  upline   User?   @relation("NetworkHierarchy", fields: [uplineId], references: [id])
+  downline User[]  @relation("NetworkHierarchy")
+
+  // User preferences
+  defaultMode         UserMode?
+  defaultSubMode      CrusadeSubMode?
+  preferredContact    String[] // Array of: email, sms, whatsapp
+  wantsBible          Boolean         @default(false)
+  dayStreak           Int             @default(0)
+  mentorEmailNotFound String?
+
+  // Password (hashed)
+  password String
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  stats                    UserStats?
+  uplinePaths              UserUplinePath[]          @relation("UserPaths")
+  downlinePaths            UserUplinePath[]          @relation("UplinePaths")
+  journeyProgress          UserJourneyProgress[]
+  courseProgress           UserCourseProgress[]
+  quizScores               UserQuizScore[]
+  networkRequestsSent      NetworkRequest[]          @relation("RequestingUser")
+  networkRequestsReceived  NetworkRequest[]          @relation("RequestingUpline")
+  userNotes                UserNote[]                @relation("UserNotes")
+  notesCreated             UserNote[]                @relation("UplineNotes")
+  organizedEvents          CrusadeEvent[]
+  volunteerAssignments     EventVolunteer[]
+  churchRepresentations    EventPartnerChurch[]
+  neighborhoodInteractions NeighborhoodInteraction[]
+  sentMessages             ConversationMessage[]     @relation("MessageSender")
+  conversationUnreadCounts ConversationUnreadCount[]
+  evangelismActivities     EvangelismActivity[]
+  prayerRequests           PrayerRequest[]
+  accounts                 Account[]
+  sessions                 Session[]
+  eventNewBelievers        EventNewBeliever[]
+
+  @@index([email])
+  @@index([uplineId])
+  @@index([level])
+  @@index([role])
+  @@index([locationCountry])
+}
+
+model UserStats {
+  userId String @id
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  gospelShares  Int @default(0)
+  decisions     Int @default(0)
+  disciples     Int @default(0)
+  networkSize   Int @default(0)
+  trainersCount Int @default(0)
+  deepestGen    Int @default(0)
+
+  updatedAt DateTime @updatedAt
+
+  @@index([userId])
+}
+
+model UserUplinePath {
+  userId    String
+  user      User   @relation("UserPaths", fields: [userId], references: [id], onDelete: Cascade)
+  uplineId  String
+  upline    User   @relation("UplinePaths", fields: [uplineId], references: [id], onDelete: Cascade)
+  pathOrder Int
+
+  createdAt DateTime @default(now())
+
+  @@id([userId, uplineId, pathOrder])
+  @@index([userId])
+  @@index([uplineId])
+  @@index([userId, pathOrder])
+}
+
+// ============================================
+// NEXTAUTH MODELS
+// ============================================
+
+model Account {
+  id                String  @id @default(uuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(uuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+// ============================================
+// JOURNEY & COURSE SYSTEM
+// ============================================
+
+model JourneyStep {
+  id                  String  @id @default(uuid())
+  order               Int     @unique
+  title               String
+  description         String? @db.Text
+  mission             String? @db.Text
+  iconName            String?
+  forNewBelieversOnly Boolean @default(false)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  objectives   JourneyStepObjective[]
+  userProgress UserJourneyProgress[]
+
+  @@index([order])
+}
+
+model JourneyStepObjective {
+  id            String      @id @default(uuid())
+  journeyStepId String
+  journeyStep   JourneyStep @relation(fields: [journeyStepId], references: [id], onDelete: Cascade)
+  objectiveId   String // e.g., 'obj1', 'obj2'
+  text          String      @db.Text
+
+  createdAt DateTime @default(now())
+
+  @@unique([journeyStepId, objectiveId])
+  @@index([journeyStepId])
+  @@index([journeyStepId, objectiveId])
+}
+
+model UserJourneyProgress {
+  userId        String
+  user          User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  journeyStepId String
+  journeyStep   JourneyStep @relation(fields: [journeyStepId], references: [id], onDelete: Cascade)
+  objectiveId   String
+  completed     Boolean     @default(false)
+  completedAt   DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@id([userId, journeyStepId, objectiveId])
+  @@index([userId])
+  @@index([journeyStepId])
+  @@index([userId, journeyStepId, objectiveId])
+}
+
+model Course {
+  id          String     @id @default(uuid())
+  title       String
+  description String?    @db.Text
+  level       String?
+  iconName    String?
+  iconBgColor String?
+  courseType  CourseType @default(normal)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  units                    CourseUnit[]
+  lessons                  CourseLesson[]
+  userProgress             UserCourseProgress[]
+  quizScores               UserQuizScore[]
+  eventNewBelieverProgress EventNewBelieverCourseProgress[]
+
+  @@index([level])
+}
+
+model CourseUnit {
+  id       String @id @default(uuid())
+  courseId String
+  course   Course @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  title    String
+  order    Int
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  lessons CourseLesson[]
+
+  @@index([courseId])
+  @@index([courseId, order])
+}
+
+model CourseLesson {
+  id           String      @id @default(uuid())
+  courseId     String
+  course       Course      @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  unitId       String?
+  unit         CourseUnit? @relation(fields: [unitId], references: [id], onDelete: Cascade)
+  title        String
+  description  String?     @db.Text
+  type         LessonType
+  videoUrl     String?     @db.Text
+  documentPath String?     @db.Text
+  htmlContent  String?     @db.Text
+  component    String?
+  order        Int
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  userProgress             UserCourseProgress[]
+  quizScores               UserQuizScore[]
+  eventNewBelieverProgress EventNewBelieverCourseProgress[]
+
+  @@index([courseId])
+  @@index([unitId])
+  @@index([courseId, order])
+}
+
+model UserCourseProgress {
+  userId      String
+  user        User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  courseId    String
+  course      Course       @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  lessonId    String
+  lesson      CourseLesson @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+  completed   Boolean      @default(false)
+  completedAt DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@id([userId, courseId, lessonId])
+  @@index([userId])
+  @@index([courseId])
+  @@index([lessonId])
+  @@index([userId, courseId, lessonId])
+}
+
+model UserQuizScore {
+  id       String        @id @default(uuid())
+  userId   String
+  user     User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  courseId String?
+  course   Course?       @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  lessonId String?
+  lesson   CourseLesson? @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+  score    Int
+  total    Int
+  takenAt  DateTime      @default(now())
+
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@index([courseId])
+  @@index([lessonId])
+}
+
+// ============================================
+// NETWORK MANAGEMENT
+// ============================================
+
+model NetworkRequest {
+  id                 String               @id @default(uuid())
+  requestingUserId   String
+  requestingUser     User                 @relation("RequestingUser", fields: [requestingUserId], references: [id], onDelete: Cascade)
+  requestingUplineId String
+  requestingUpline   User                 @relation("RequestingUpline", fields: [requestingUplineId], references: [id], onDelete: Cascade)
+  status             NetworkRequestStatus @default(pending)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([requestingUserId, requestingUplineId])
+  @@index([requestingUserId])
+  @@index([requestingUplineId])
+  @@index([status])
+}
+
+model UserNote {
+  id       String @id @default(uuid())
+  userId   String
+  user     User   @relation("UserNotes", fields: [userId], references: [id], onDelete: Cascade)
+  uplineId String
+  upline   User   @relation("UplineNotes", fields: [uplineId], references: [id], onDelete: Cascade)
+  content  String @db.Text
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId])
+  @@index([uplineId])
+}
+
+// ============================================
+// EVENT MANAGEMENT
+// ============================================
+
+model CrusadeEvent {
+  id                    String      @id @default(uuid())
+  name                  String
+  description           String?     @db.Text
+  startDate             DateTime
+  endDate               DateTime
+  location              String?
+  maxCapacity           Int?
+  currentAttendance     Int         @default(0)
+  status                EventStatus @default(upcoming)
+  organizerId           String
+  organizer             User        @relation(fields: [organizerId], references: [id])
+  organizerName         String
+  decisions             Int         @default(0)
+  onboarded             Int         @default(0)
+  connected             Int         @default(0)
+  attendance            Int         @default(0)
+  unregisteredDecisions Int         @default(0)
+  notes                 String?     @db.Text
+  courseCompletions     Int         @default(0)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  volunteers      EventVolunteer[]
+  partnerChurches EventPartnerChurch[]
+  newBelievers    EventNewBeliever[]
+
+  @@index([organizerId])
+  @@index([status])
+  @@index([startDate])
+}
+
+model EventVolunteer {
+  id                  String       @id @default(uuid())
+  eventId             String
+  event               CrusadeEvent @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  userId              String
+  user                User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role                String       @default("Volunteer")
+  onboardingExpertise Boolean      @default(false)
+  onboardingTraining  Boolean      @default(false)
+  onboardingCheck     Boolean      @default(false)
+  expertise           String[]
+  sessions            String[]
+  trainingQuizScore   Int?
+  trainingCompletedAt DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([eventId, userId])
+  @@index([eventId])
+  @@index([userId])
+  @@index([eventId, userId])
+}
+
+model EventPartnerChurch {
+  id           String       @id @default(uuid())
+  eventId      String
+  event        CrusadeEvent @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  userId       String?
+  user         User?        @relation(fields: [userId], references: [id], onDelete: SetNull)
+  name         String
+  contact      String?
+  email        String?
+  phone        String?
+  address      String?      @db.Text
+  denomination String?
+  websiteUrl   String?      @db.Text
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([eventId])
+  @@index([userId])
+}
+
+model EventNewBeliever {
+  id               String           @id @default(uuid())
+  eventId          String
+  event            CrusadeEvent     @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  userId           String?
+  user             User?            @relation(fields: [userId], references: [id], onDelete: SetNull)
+  name             String
+  connectionStatus ConnectionStatus @default(Pending)
+  church           String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  courseProgress EventNewBelieverCourseProgress[]
+
+  @@index([eventId])
+  @@index([userId])
+  @@index([connectionStatus])
+}
+
+model EventNewBelieverCourseProgress {
+  newBelieverId String
+  newBeliever   EventNewBeliever @relation(fields: [newBelieverId], references: [id], onDelete: Cascade)
+  courseId      String
+  course        Course           @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  lessonId      String
+  lesson        CourseLesson     @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+  completed     Boolean          @default(false)
+  completedAt   DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@id([newBelieverId, courseId, lessonId])
+  @@index([newBelieverId])
+  @@index([newBelieverId, courseId, lessonId])
+}
+
+// ============================================
+// NEIGHBORHOOD EVANGELISM
+// ============================================
+
+model NeighborhoodInteraction {
+  id                String    @id @default(uuid())
+  userId            String
+  user              User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name              String?
+  address           String    @db.Text
+  locationLatitude  Decimal?  @db.Decimal(10, 8)
+  locationLongitude Decimal?  @db.Decimal(11, 8)
+  contactEmail      String?
+  contactPhone      String?
+  logKnocked        YesNo?
+  logAnswered       YesNo?
+  logPrayed         YesNo?
+  logGospel         YesNo?
+  logFollowup       YesNo?
+  decision          Decision?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  notes    NeighborhoodInteractionNote[]
+  statuses NeighborhoodInteractionStatus[]
+
+  @@index([userId])
+  @@index([decision])
+  @@index([locationLatitude, locationLongitude])
+}
+
+model NeighborhoodInteractionNote {
+  id            String                  @id @default(uuid())
+  interactionId String
+  interaction   NeighborhoodInteraction @relation(fields: [interactionId], references: [id], onDelete: Cascade)
+  content       String                  @db.Text
+
+  createdAt DateTime @default(now())
+
+  @@index([interactionId])
+}
+
+model NeighborhoodInteractionStatus {
+  interactionId String
+  interaction   NeighborhoodInteraction @relation(fields: [interactionId], references: [id], onDelete: Cascade)
+  status        String
+
+  createdAt DateTime @default(now())
+
+  @@id([interactionId, status])
+  @@index([interactionId])
+  @@index([status])
+  @@index([interactionId, status])
+}
+
+// ============================================
+// MESSAGING SYSTEM
+// ============================================
+
+model Conversation {
+  id           String   @id @default(uuid())
+  participants String[] // Array of user IDs
+  lastMessage  String?  @db.Text
+  lastUpdated  DateTime @default(now())
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  messages     ConversationMessage[]
+  unreadCounts ConversationUnreadCount[]
+
+  @@index([lastUpdated])
+}
+
+model ConversationMessage {
+  id             String       @id @default(uuid())
+  conversationId String
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  senderId       String
+  sender         User         @relation("MessageSender", fields: [senderId], references: [id], onDelete: Cascade)
+  text           String       @db.Text
+  timestamp      DateTime     @default(now())
+
+  createdAt DateTime @default(now())
+
+  @@index([conversationId])
+  @@index([senderId])
+  @@index([conversationId, timestamp])
+}
+
+model ConversationUnreadCount {
+  conversationId String
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  userId         String
+  user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  unreadCount    Int          @default(0)
+
+  updatedAt DateTime @updatedAt
+
+  @@id([conversationId, userId])
+  @@index([conversationId])
+  @@index([userId])
+  @@index([conversationId, userId])
+}
+
+// ============================================
+// STATISTICS & ANALYTICS
+// ============================================
+
+model DailyStat {
+  date                 DateTime @id @db.Date
+  totalGospelShares    Int      @default(0)
+  totalDecisions       Int      @default(0)
+  totalDisciples       Int      @default(0)
+  newUsers             Int      @default(0)
+  activeUsers          Int      @default(0)
+  neighborhoodsVisited Int      @default(0)
+  eventsHeld           Int      @default(0)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([date])
+}
+
+model LocationStat {
+  id                String  @id @default(uuid())
+  country           String
+  state             String?
+  townSuburb        String?
+  metro             String?
+  totalGospelShares Int     @default(0)
+  totalDecisions    Int     @default(0)
+  totalDisciples    Int     @default(0)
+  totalUsers        Int     @default(0)
+
+  updatedAt DateTime @updatedAt
+
+  @@unique([country, state, townSuburb, metro])
+  @@index([country])
+  @@index([state])
+  @@index([country, state, townSuburb, metro])
+}
+
+// ============================================
+// LANGUAGE MANAGEMENT
+// ============================================
+
+model Language {
+  id   String  @id @default(uuid())
+  code String  @unique
+  name String
+  flag String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([code])
+}
+
+// ============================================
+// SMS & WHATSAPP INTEGRATION
+// ============================================
+
+model IncomingMessage {
+  id         String   @id @default(uuid())
+  from       String
+  to         String
+  body       String   @db.Text
+  messageSid String?  @unique
+  isWhatsapp Boolean  @default(false)
+  receivedAt DateTime @default(now())
+
+  createdAt DateTime @default(now())
+
+  @@index([from])
+  @@index([receivedAt])
+  @@index([messageSid])
+}
+
+// ============================================
+// ACTIVITY LOGGING
+// ============================================
+
+model EvangelismActivity {
+  id           String       @id @default(uuid())
+  userId       String
+  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  activityType ActivityType
+  count        Int          @default(1)
+  toolUsed     String?
+  notes        String?      @db.Text
+
+  createdAt DateTime @default(now())
+
+  prayerRequests PrayerRequest[]
+
+  @@index([userId])
+  @@index([activityType])
+  @@index([createdAt])
+}
+
+model PrayerRequest {
+  id         String              @id @default(uuid())
+  userId     String
+  user       User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  activityId String?
+  activity   EvangelismActivity? @relation(fields: [activityId], references: [id], onDelete: SetNull)
+  request    String              @db.Text
+
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@index([activityId])
+}
