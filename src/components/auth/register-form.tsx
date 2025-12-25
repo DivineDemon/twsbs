@@ -208,7 +208,7 @@ export function RegisterForm() {
                   name="phone"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Phone (Optional)</FormLabel>
+                      <FormLabel>Phone</FormLabel>
                       <FormControl>
                         <Input
                           type="tel"
@@ -303,7 +303,7 @@ export function RegisterForm() {
           {/* Step 3: Preferences & Safety */}
           {step === 3 && (
             <div className="space-y-4 animate-in fade-in slide-in-from-right-4 duration-300">
-              <h3 className="text-lg font-medium">Preferences & Security</h3>
+              {/* <h3 className="text-lg font-medium">Preferences & Security</h3> */}
 
               {/* Preferences */}
               <div className="space-y-4">
@@ -320,7 +320,7 @@ export function RegisterForm() {
                           Select at least one method.
                         </FormDescription>
                       </div>
-                      <div className="flex flex-col space-y-2">
+                      <div className="grid grid-cols-3">
                         {["email", "sms", "whatsapp"].map((item) => (
                           <FormField
                             key={item}
@@ -375,11 +375,11 @@ export function RegisterForm() {
                         />
                       </FormControl>
                       <div className="space-y-1 leading-none">
-                        <FormLabel>I accept the SMS Policy</FormLabel>
+                        <FormLabel>
+                          I agree to receiving SMS texts. Default rates may
+                          apply
+                        </FormLabel>
                         <FormDescription>
-                          I agree to receiving SMS messages. Msg & data rates
-                          may apply. Reply STOP to opt out.
-                          <br />
                           <PolicyModal
                             title="SMS Messaging Policy"
                             content={smsPolicyContent}
@@ -401,9 +401,9 @@ export function RegisterForm() {
                         <FormLabel className="text-base">
                           Request a Bible
                         </FormLabel>
-                        <FormDescription>
+                        {/* <FormDescription>
                           I would like to receive a physical Bible.
-                        </FormDescription>
+                        </FormDescription> */}
                       </div>
                       <FormControl>
                         <Switch
