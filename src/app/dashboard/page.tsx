@@ -1,3 +1,5 @@
+import { JourneyBoard } from "@/components/journey/journey-board";
+import { JourneyHeader } from "@/components/journey/journey-header";
 import { Button } from "@/components/ui/button";
 import { auth, signOut } from "@/lib/auth";
 
@@ -16,6 +18,14 @@ export default async function DashboardPage() {
           <div className="p-4 bg-muted rounded-md font-mono text-sm max-w-sm">
             <p>Email: {session?.user?.email}</p>
             <p>Role: {session?.user?.role}</p>
+          </div>
+
+          <div className="pt-8">
+            <h2 className="text-2xl font-bold mb-6">
+              Your Discipleship Journey
+            </h2>
+            <JourneyHeader />
+            <JourneyBoard />
           </div>
 
           <form
