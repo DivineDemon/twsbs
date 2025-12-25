@@ -1,9 +1,11 @@
-import { Inter } from "next/font/google";
-import { Toaster } from "@/components/ui/sonner";
-import "./globals.css";
 import type { Metadata } from "next";
+import { Inter } from "next/font/google";
+import { SessionProvider } from "next-auth/react";
+import { Navbar } from "@/components/navbar";
 import { ThemeProvider } from "@/components/theme-provider";
+import { Toaster } from "@/components/ui/sonner";
 import { TRPCProvider } from "@/lib/trpc/provider";
+import "./globals.css";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -26,7 +28,12 @@ export default function RootLayout({
           enableSystem
           disableTransitionOnChange
         >
-          <TRPCProvider>{children}</TRPCProvider>
+          <SessionProvider>
+            <TRPCProvider>
+              <Navbar />
+              {children}
+            </TRPCProvider>
+          </SessionProvider>
         </ThemeProvider>
         <Toaster />
       </body>

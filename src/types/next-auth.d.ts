@@ -8,6 +8,7 @@ declare module "next-auth" {
       name: string;
       role: string;
       level: string;
+      profilePicture?: string | null;
     };
   }
 
@@ -17,6 +18,7 @@ declare module "next-auth" {
     name: string;
     role: string;
     level: string;
+    profilePicture?: string | null;
   }
 }
 
@@ -25,6 +27,7 @@ declare module "next-auth/jwt" {
     id: string;
     role: string;
     level: string;
+    profilePicture?: string | null;
   }
 }
 
@@ -32,5 +35,6 @@ declare module "@auth/core/adapters" {
   interface AdapterUser {
     role: string;
     level: string;
+    profilePicture?: string | null;
   }
 }

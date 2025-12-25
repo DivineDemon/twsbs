@@ -21,8 +21,11 @@ export default function Home() {
           </Link>
         </nav>
         <div className="flex items-center gap-4">
+          <Link href="/dashboard" className="hidden sm:block">
+            <Button variant="ghost">Continue as Guest</Button>
+          </Link>
           <Link href="/login">
-            <Button variant="ghost">Sign In</Button>
+            <Button variant="outline">Sign In</Button>
           </Link>
           <Link href="/register">
             <Button>Get Started</Button>
@@ -46,9 +49,9 @@ export default function Home() {
                 Start Your Journey
               </Button>
             </Link>
-            <Link href="/login">
+            <Link href="/dashboard">
               <Button variant="outline" size="lg" className="h-12 px-8 text-lg">
-                Sign In
+                Continue as Guest
               </Button>
             </Link>
           </div>
