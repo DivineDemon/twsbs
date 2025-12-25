@@ -18,14 +18,12 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { privacyPolicyContent, smsPolicyContent } from "@/lib/policies";
 import { type LoginInput, loginSchema } from "@/lib/validations/auth";
-import { PolicyModal } from "./policy-modal";
 
 export function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const callbackUrl = searchParams.get("callbackUrl") || "/";
+  const callbackUrl = searchParams.get("callbackUrl") || "/dashboard";
   const [isLoading, setIsLoading] = useState(false);
 
   const form = useForm<LoginInput>({
@@ -114,18 +112,6 @@ export function LoginForm() {
         >
           Create an account
         </Link>
-      </div>
-      <div className="flex justify-center gap-4 text-xs text-muted-foreground">
-        <PolicyModal
-          title="Privacy Policy"
-          content={privacyPolicyContent}
-          triggerText="Privacy Policy"
-        />
-        <PolicyModal
-          title="SMS Policy"
-          content={smsPolicyContent}
-          triggerText="SMS Policy"
-        />
       </div>
     </div>
   );

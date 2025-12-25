@@ -22,7 +22,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
 import { Switch } from "@/components/ui/switch";
-import { privacyPolicyContent, smsPolicyContent } from "@/lib/policies";
+import { smsPolicyContent } from "@/lib/policies";
 import { trpc } from "@/lib/trpc/client";
 import { cn } from "@/lib/utils";
 import { type RegisterInput, registerSchema } from "@/lib/validations/auth";
@@ -79,7 +79,7 @@ export function RegisterForm() {
         return;
       }
 
-      router.push("/");
+      router.push("/dashboard");
       router.refresh();
     },
     onError: (error) => {
@@ -505,18 +505,6 @@ export function RegisterForm() {
           >
             Sign in here
           </Link>
-        </div>
-        <div className="flex justify-center gap-4 text-xs text-muted-foreground">
-          <PolicyModal
-            title="Privacy Policy"
-            content={privacyPolicyContent}
-            triggerText="Privacy Policy"
-          />
-          <PolicyModal
-            title="SMS Policy"
-            content={smsPolicyContent}
-            triggerText="SMS Policy"
-          />
         </div>
       </div>
     </div>

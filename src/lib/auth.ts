@@ -1,12 +1,17 @@
 import { PrismaAdapter } from "@auth/prisma-adapter";
 import bcrypt from "bcryptjs";
-import type { NextAuthConfig } from "next-auth";
+import NextAuth, { type NextAuthConfig } from "next-auth"; // Should ideally be just types or config, but we are satisfying NextAuthConfig
 import Credentials from "next-auth/providers/credentials";
 import { prisma } from "@/lib/prisma";
+import { authConfig } from "./auth.config";
 
 export const authOptions = {
+  ...authConfig,
   // biome-ignore lint/suspicious/noExplicitAny: Adapter type mismatch with custom user fields
   adapter: PrismaAdapter(prisma as any) as any,
+  session: {
+    strategy: "jwt",
+  },
   providers: [
     Credentials({
       name: "credentials",
@@ -47,31 +52,7 @@ export const authOptions = {
       },
     }),
   ],
-  session: {
-    strategy: "jwt" as const,
-  },
-  pages: {
-    signIn: "/login",
-  },
-  callbacks: {
-    // biome-ignore lint/suspicious/noExplicitAny: NextAuth types are complex
-    async jwt({ token, user }: any) {
-      if (user) {
-        token.id = user.id;
-        token.role = user.role;
-        token.level = user.level;
-      }
-      return token;
-    },
-    // biome-ignore lint/suspicious/noExplicitAny: NextAuth types are complex
-    async session({ session, token }: any) {
-      if (session.user) {
-        session.user.id = token.id as string;
-        session.user.role = token.role as string;
-        session.user.level = token.level as string;
-      }
-      return session;
-    },
-  },
   secret: process.env.NEXTAUTH_SECRET,
 } satisfies NextAuthConfig;
+
+export const { handlers, auth, signIn, signOut } = NextAuth(authOptions);
